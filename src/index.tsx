@@ -1,34 +1,40 @@
-import { Hono } from 'hono'
-import type { FC } from 'hono/jsx'
+import { drizzle } from "drizzle-orm/d1";
+import { Hono } from "hono";
+import { usersTable } from "../db/schema";
 
-const app = new Hono()
+type Bindings = {
+  DB: D1Database;
+};
 
-const Layout: FC = (props) => {
-  return (
-    <html>
-      <body>{props.children}</body>
-    </html>
-  )
-}
+const app = new Hono<{ Bindings: Bindings }>();
 
-const Top: FC<{ messages: string[] }> = (props: {
-  messages: string[]
-}) => {
-  return (
-    <Layout>
-      <h1>Hello Hono!</h1>
-      <ul>
-        {props.messages.map((message) => {
-          return <li>{message}!!</li>
-        })}
-      </ul>
-    </Layout>
-  )
-}
+app.get("/", (c) => {
+  return c.text("Hello Hono!");
+});
 
-app.get('/', (c) => {
-  const messages = ['Good Morning', 'Good Evening', 'Good Night']
-  return c.html(<Top messages={messages} />)
-})
+/*****************************************
+ * get users
+ *****************************************/
+app.get("/users", async (c) => {
+  const db = drizzle(c.env.DB);
+  const result = await db.select().from(usersTable).all();
+  return c.json(result);
+});
 
-export default app
+/*****************************************
+ * create users
+ *****************************************/
+app.post("/users", async (c) => {
+  const params = await c.req.json<typeof usersTable.$inferSelect>();
+  const db = drizzle(c.env.DB);
+
+  const result = await db.insert(usersTable).values({
+    name: params.name,
+    email: params.email,
+    age: params.age,
+  });
+
+  return c.json(result);
+});
+
+export default app;
