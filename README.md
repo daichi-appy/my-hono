@@ -1,8 +1,11 @@
+
+local環境
 ```
-npm install
-npm run dev
+bun i
+bun run dev
 ```
 
+cloudflare workersにデプロイ
 ```
-npm run deploy
+bun run deploy
 ```
